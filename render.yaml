@@ -1,5 +1,7 @@
 services:
   # ── API (web service) ──────────────────────────────────────────────────────
+  # CMD is defined in Dockerfile: bash scripts/start_api.sh
+  # (alembic upgrade head → uvicorn)
   - type: web
     name: oseta-api
     runtime: docker
@@ -7,7 +9,6 @@ services:
     dockerContext: .
     plan: free
     region: oregon
-    startCommand: alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       # Set these in the Render dashboard — never commit real values here
@@ -38,16 +39,14 @@ services:
 
   # ── Daily correlation cron job ─────────────────────────────────────────────
   # Runs at 05:00 UTC: fetches ETF + FRED data, recomputes correlation matrix.
-  # No LLM calls — safe to run on free tier without API cost.
+  # CMD is defined in Dockerfile.cron: python scripts/run_pipeline.py
   - type: cron
     name: oseta-correlation-cron
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.cron
     dockerContext: .
-    plan: free
     region: oregon
     schedule: "0 5 * * *"
-    startCommand: python scripts/run_pipeline.py
     envVars:
       - key: DATABASE_URL
         sync: false
