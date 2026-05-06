@@ -1,0 +1,16 @@
+# Normalize line endings to LF on commit (repo runs on Linux)
+* text=auto eol=lf
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+
+# Binaries
+*.docx binary
+*.png binary
+*.jpg binary
+*.ico binary

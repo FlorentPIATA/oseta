@@ -1,0 +1,63 @@
+services:
+  # ── API (web service) ──────────────────────────────────────────────────────
+  - type: web
+    name: oseta-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    startCommand: alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Set these in the Render dashboard — never commit real values here
+      - key: DATABASE_URL          # postgresql+asyncpg://user:pass@host/db?ssl=require
+        sync: false
+      - key: DATABASE_URL_SYNC     # postgresql://user:pass@host/db?sslmode=require
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OSETA_MASTER_KEY
+        sync: false
+      # CORS_ORIGINS: JSON array of allowed origins, e.g. ["https://oseta.vercel.app"]
+      - key: CORS_ORIGINS
+        sync: false
+      # REDIS_URL: optional (e.g. from Upstash). If unset, caching is bypassed.
+      - key: REDIS_URL
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+
+  # ── Daily correlation cron job ─────────────────────────────────────────────
+  # Runs at 05:00 UTC: fetches ETF + FRED data, recomputes correlation matrix.
+  # No LLM calls — safe to run on free tier without API cost.
+  - type: cron
+    name: oseta-correlation-cron
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    schedule: "0 5 * * *"
+    startCommand: python scripts/run_pipeline.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
