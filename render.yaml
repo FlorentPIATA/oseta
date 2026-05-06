@@ -37,26 +37,8 @@ services:
       - key: LOG_LEVEL
         value: INFO
 
-  # ── Daily correlation cron job ─────────────────────────────────────────────
-  # Runs at 05:00 UTC: fetches ETF + FRED data, recomputes correlation matrix.
-  # CMD is defined in Dockerfile.cron: python scripts/run_pipeline.py
-  - type: cron
-    name: oseta-correlation-cron
-    runtime: docker
-    dockerfilePath: ./Dockerfile.cron
-    dockerContext: .
-    region: oregon
-    schedule: "0 5 * * *"
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: DATABASE_URL_SYNC
-        sync: false
-      - key: ALPHA_VANTAGE_API_KEY
-        sync: false
-      - key: FRED_API_KEY
-        sync: false
-      - key: ENVIRONMENT
-        value: production
-      - key: LOG_LEVEL
-        value: INFO
+  # ── Daily pipeline ────────────────────────────────────────────────────────
+  # Triggered externally by cron-job.org (free) at 05:00 UTC:
+  #   POST https://oseta-api.onrender.com/correlations/refresh
+  #   Header: X-Master-Key: <OSETA_MASTER_KEY>
+  # No Render cron service needed — avoids paid plan requirement.
