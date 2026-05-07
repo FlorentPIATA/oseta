@@ -25,3 +25,21 @@ export interface MatrixFilters {
   minCorrelation: number
   lagMax: number
 }
+
+export interface PipelineStatus {
+  status: 'idle' | 'running' | 'success' | 'error'
+  step: 'fetching_etfs' | 'fetching_fred' | 'computing' | 'predicting' | null
+  triggered_at: string | null
+  finished_at: string | null
+  etf_new: number | null
+  fred_new: number | null
+  computed: number | null
+  skipped: number | null
+  predictions: number | null
+  error: string | null
+}
+
+export interface RefreshStartedResponse {
+  status: 'started' | 'already_running'
+  triggered_at: string | null
+}

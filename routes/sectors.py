@@ -64,6 +64,24 @@ async def create_sector(
     return SectorRead.model_validate(sector)
 
 
+@router.delete("/{sector_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_sector(
+    sector_id: int,
+    x_master_key: Annotated[str | None, Header()] = None,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Supprime un secteur. Protégé par X-Master-Key."""
+    if x_master_key != settings.oseta_master_key:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid master key")
+
+    sector = await session.get(Sector, sector_id)
+    if sector is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sector {sector_id} not found")
+
+    await session.delete(sector)
+    await session.commit()
+
+
 @router.get("/{sector_id}", response_model=SectorRead)
 async def get_sector(
     sector_id: int,

@@ -65,6 +65,7 @@ class SectorCreate(SectorBase):
 
 class SectorRead(SectorBase):
     id: int
+    parent_id: int | None = None
     volatility_index: float | None = None
     trend_direction: str | None = None
 
@@ -116,7 +117,9 @@ class ISScore(BaseModel):
 class PredictionRead(BaseModel):
     id: int
     sector_id: int
+    sector_code: str | None = None
     linked_sector_id: int | None
+    linked_sector_code: str | None = None
     prediction_type: str
     horizon_days: int
     confidence_score: float

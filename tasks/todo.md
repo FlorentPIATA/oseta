@@ -13,7 +13,7 @@
 - [x] Frontend: insight card component above heatmap (top is_significant=true, lag_days>0 result; shows p_value, computed_at; empty state: "Correlations updating — check back after 05:00 UTC")
 - [ ] Register `/health` on cron-job.org (free) — keep Render free tier warm between cron runs
 - [ ] Seed 90 days ETF data for 6 sectors (XLK, XLF, XLE, XLV, XLI, XLB)
-- [ ] Run `scripts/smoke_test.py` against deployed URL — all assertions pass before Reddit post
+- [x] Run `scripts/smoke_test.py` against deployed URL — all assertions pass before Reddit post
 
 ## Deferred (after first user signal)
 

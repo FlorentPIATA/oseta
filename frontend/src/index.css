@@ -2,7 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #030712;
-  color: #f9fafb;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=optional');
+
+/* ── Design tokens ────────────────────────────────────── */
+:root {
+  --bg:          oklch(0.97 0.005 240);
+  --bg-2:        oklch(0.93 0.006 240);
+  --bg-3:        oklch(0.88 0.007 240);
+  --text-1:      oklch(0.15 0.008 240);
+  --text-2:      oklch(0.40 0.007 240);
+  --text-3:      oklch(0.57 0.005 240);
+  --border:      oklch(0.83 0.006 240);
+  --pos:         oklch(0.40 0.14 145);
+  --neg:         oklch(0.40 0.14 25);
+  --accent:      oklch(0.42 0.12 250);
+  --accent-bg:   oklch(0.93 0.04 250);
+  --pos-bg:      oklch(0.93 0.05 145);
+  --neg-bg:      oklch(0.93 0.05 25);
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          oklch(0.11 0.008 240);
+    --bg-2:        oklch(0.16 0.009 240);
+    --bg-3:        oklch(0.21 0.010 240);
+    --text-1:      oklch(0.93 0.004 240);
+    --text-2:      oklch(0.68 0.006 240);
+    --text-3:      oklch(0.46 0.005 240);
+    --border:      oklch(0.26 0.008 240);
+    --pos:         oklch(0.65 0.14 145);
+    --neg:         oklch(0.65 0.14 25);
+    --accent:      oklch(0.65 0.12 250);
+    --accent-bg:   oklch(0.20 0.05 250);
+    --pos-bg:      oklch(0.17 0.05 145);
+    --neg-bg:      oklch(0.17 0.05 25);
+  }
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+}
+
+/* ── Utility classes ──────────────────────────────────── */
+.stat { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+h1, h2, h3 { text-wrap: balance; }
+article p  { text-wrap: pretty; }

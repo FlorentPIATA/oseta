@@ -1,21 +1,23 @@
 """OSETA — Route heatmap de corrélation inter-sectorielle.
 
-GET  /correlations/matrix  → heatmap prête pour Recharts
-POST /correlations/refresh → déclenche recalcul (master key requis)
+GET  /correlations/matrix          → heatmap prête pour Recharts
+POST /correlations/refresh         → démarre le pipeline en background (master key requis)
+GET  /correlations/pipeline-status → état courant du pipeline (master key requis)
 """
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Header, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from models.db import CorrelationMatrixEntry, Sector
 from models.enums import CorrelationMethod
-from services.correlation_store import get_latest_matrix, run_correlation_job
+from services.correlation_store import get_latest_matrix
 from services.database import get_session
+from services.pipeline import PipelineState, get_state, reset_for_run, run_pipeline
 
 router = APIRouter(prefix="/correlations", tags=["correlations"])
 
@@ -42,10 +44,22 @@ class HeatmapResponse(BaseModel):
     total_pairs: int
 
 
-class RefreshResponse(BaseModel):
-    computed: int
-    skipped: int
-    triggered_at: datetime
+class RefreshStartedResponse(BaseModel):
+    status: Literal["started", "already_running"]
+    triggered_at: datetime | None
+
+
+class PipelineStatusResponse(BaseModel):
+    status: Literal["idle", "running", "success", "error"]
+    step: str | None
+    triggered_at: datetime | None
+    finished_at: datetime | None
+    etf_new: int | None
+    fred_new: int | None
+    computed: int | None
+    skipped: int | None
+    predictions: int | None
+    error: str | None
 
 
 # ─────────────────────── Helpers ─────────────────────────────────────────
@@ -132,20 +146,45 @@ async def get_correlation_matrix(
     )
 
 
-@router.post("/refresh", response_model=RefreshResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post("/refresh", response_model=RefreshStartedResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_refresh(
+    background_tasks: BackgroundTasks,
     x_master_key: Annotated[str | None, Header()] = None,
     method: CorrelationMethod = Query(CorrelationMethod.PEARSON),
     window_days: int = Query(90, ge=30, le=365),
-    session: AsyncSession = Depends(get_session),
-) -> RefreshResponse:
-    """Déclenche un recalcul immédiat de la matrice. Protégé par X-Master-Key."""
+) -> RefreshStartedResponse:
+    """Démarre le pipeline en background. Retourne immédiatement. Protégé par X-Master-Key."""
     if x_master_key != settings.oseta_master_key:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid master key")
 
-    result = await run_correlation_job(session, window_days=window_days, method=method)
-    return RefreshResponse(
-        computed=result["computed"],
-        skipped=result["skipped"],
-        triggered_at=datetime.utcnow(),
+    state = get_state()
+    if state.status == "running":
+        return RefreshStartedResponse(status="already_running", triggered_at=state.triggered_at)
+
+    now = datetime.utcnow()
+    reset_for_run(now)
+    background_tasks.add_task(run_pipeline, method, window_days)
+    return RefreshStartedResponse(status="started", triggered_at=now)
+
+
+@router.get("/pipeline-status", response_model=PipelineStatusResponse)
+async def get_pipeline_status(
+    x_master_key: Annotated[str | None, Header()] = None,
+) -> PipelineStatusResponse:
+    """Retourne l'état courant du pipeline. Protégé par X-Master-Key."""
+    if x_master_key != settings.oseta_master_key:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid master key")
+
+    s = get_state()
+    return PipelineStatusResponse(
+        status=s.status,
+        step=s.step,
+        triggered_at=s.triggered_at,
+        finished_at=s.finished_at,
+        etf_new=s.etf_new,
+        fred_new=s.fred_new,
+        computed=s.computed,
+        skipped=s.skipped,
+        predictions=s.predictions,
+        error=s.error,
     )

@@ -13,12 +13,44 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
-from models.db import Prediction
+from models.db import Prediction, Sector
 from models.enums import PredictionStatus
 from models.schemas import PredictionRead
 from services.database import get_session
 
 router = APIRouter()
+
+
+async def _enrich(
+    session: AsyncSession,
+    preds: list[Prediction],
+) -> list[PredictionRead]:
+    """Batch-loads sector codes and attaches them to PredictionRead objects."""
+    if not preds:
+        return []
+    ids = {p.sector_id for p in preds} | {p.linked_sector_id for p in preds if p.linked_sector_id}
+    rows = await session.execute(select(Sector).where(Sector.id.in_(ids)))
+    code_map: dict[int, str] = {s.id: s.code for s in rows.scalars().all()}
+
+    result = []
+    for p in preds:
+        data = {
+            "id": p.id,
+            "sector_id": p.sector_id,
+            "sector_code": code_map.get(p.sector_id),
+            "linked_sector_id": p.linked_sector_id,
+            "linked_sector_code": code_map.get(p.linked_sector_id) if p.linked_sector_id else None,
+            "prediction_type": p.prediction_type,
+            "horizon_days": p.horizon_days,
+            "confidence_score": p.confidence_score,
+            "predicted_direction": p.predicted_direction,
+            "predicted_magnitude": p.predicted_magnitude,
+            "status": p.status,
+            "realized_at": p.realized_at,
+            "created_at": p.created_at,
+        }
+        result.append(PredictionRead.model_validate(data))
+    return result
 
 
 @router.get("", response_model=list[PredictionRead])
@@ -38,7 +70,7 @@ async def list_predictions(
         q = q.where(Prediction.sector_id == sector_id)
 
     rows = await session.scalars(q.offset(skip).limit(limit))
-    return [PredictionRead.model_validate(p) for p in rows.all()]
+    return await _enrich(session, list(rows.all()))
 
 
 @router.get("/track-record")
@@ -93,7 +125,8 @@ async def get_prediction(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prediction {prediction_id} not found",
         )
-    return PredictionRead.model_validate(pred)
+    enriched = await _enrich(session, [pred])
+    return enriched[0]
 
 
 @router.patch("/{prediction_id}/realize", response_model=PredictionRead)
@@ -135,4 +168,5 @@ async def realize_prediction(
     pred.realized_at = datetime.now(tz=timezone.utc)
     await session.commit()
     await session.refresh(pred)
-    return PredictionRead.model_validate(pred)
+    enriched = await _enrich(session, [pred])
+    return enriched[0]
