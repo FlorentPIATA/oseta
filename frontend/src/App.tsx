@@ -2,72 +2,82 @@ import { CorrelationHeatmap } from './components/heatmap/CorrelationHeatmap'
 import { LeadGraph }          from './components/LeadGraph'
 import { MacroOverlay }       from './components/MacroOverlay'
 import { PipelinePanel }      from './components/PipelinePanel'
+import { SectionNav }         from './components/SectionNav'
 import { SignalFeed }         from './components/SignalFeed'
 import { SignalOfTheDay }     from './components/SignalOfTheDay'
 import { TrackRecord }        from './components/TrackRecord'
 
-const S = {
-  page:    { minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-1)' } as const,
-  header:  { borderBottom: '1px solid var(--border)', padding: '0 40px', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as const,
-  main:    { maxWidth: 1080, margin: '0 auto', padding: '0 40px 80px' } as const,
-  section: { padding: '40px 0 0' } as const,
-  cols:    { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 } as const,
+function GearIcon() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <circle cx={7.5} cy={7.5} r={2} />
+      <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.93 2.93l1.06 1.06M11.01 11.01l1.06 1.06M2.93 12.07l1.06-1.06M11.01 3.99l1.06-1.06" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 export default function App() {
-  return (
-    <div style={S.page}>
+  const scrollToAdmin = () => {
+    document.getElementById('admin')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
-      {/* Header */}
-      <header style={S.header}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <span style={{ fontWeight: 600, fontSize: '0.9375rem', letterSpacing: '-0.01em', color: 'var(--text-1)' }}>
+  return (
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text-1)]">
+
+      <header className="h-[52px] flex items-center justify-between px-10 border-b border-[var(--border)]">
+        <div className="flex items-baseline gap-3">
+          <span className="font-semibold text-[0.9375rem] tracking-tight text-[var(--text-1)]">
             OSETA
           </span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>
+          <span className="text-xs text-[var(--text-3)]">
             Observatory for Strategic Emerging Technologies &amp; Analytics
           </span>
         </div>
-        <span style={{ fontSize: '0.6875rem', fontFamily: 'monospace', color: 'var(--text-3)', padding: '2px 8px', border: '1px solid var(--border)', borderRadius: 4 }}>
-          v0.1.0
-        </span>
+        <button
+          onClick={scrollToAdmin}
+          aria-label="Open admin panel"
+          className="flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border)] bg-transparent text-[var(--text-3)] cursor-pointer hover:text-[var(--text-2)] hover:border-[var(--text-3)] transition-colors"
+        >
+          <GearIcon />
+        </button>
       </header>
 
-      {/* Admin */}
-      <PipelinePanel />
+      <SectionNav />
 
-      <main style={S.main}>
+      <main className="max-w-[1080px] mx-auto px-5 md:px-10 pb-20">
 
-        {/* 1 — Signal of the Day */}
-        <SignalOfTheDay />
+        <div id="signal" className="scroll-mt-[44px]">
+          <SignalOfTheDay />
+        </div>
 
-        {/* 2 + 3 — Lead Graph + Macro Overlay */}
-        <div style={{ ...S.section }}>
-          <div style={S.cols}>
+        <div id="graph" className="pt-10 scroll-mt-[44px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <LeadGraph />
             <MacroOverlay />
           </div>
         </div>
 
-        {/* 4 — Heatmap */}
-        <div style={S.section}>
-          <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 16 }}>
+        <div id="heatmap" className="pt-10 scroll-mt-[44px]">
+          <p className="text-[0.6875rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-3)] mb-4">
             Correlation Matrix
           </p>
           <CorrelationHeatmap />
         </div>
 
-        {/* 5 — Signal Feed */}
-        <div style={{ ...S.section, paddingTop: 48 }}>
+        <div id="signals" className="pt-12 scroll-mt-[44px]">
           <SignalFeed />
         </div>
 
-        {/* 6 — Track Record */}
-        <div style={{ ...S.section, paddingTop: 48 }}>
+        <div id="predictions" className="pt-12 scroll-mt-[44px]">
           <TrackRecord />
         </div>
 
       </main>
+
+      <div id="admin">
+        <PipelinePanel />
+      </div>
+
     </div>
   )
 }

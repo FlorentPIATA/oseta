@@ -30,12 +30,26 @@ function buildNarrative(c: HeatmapCell): string {
        + `This relationship has been statistically significant over a rolling ${window}-day window.`
 }
 
+const sectionBase: React.CSSProperties = {
+  borderBottom: '1px solid var(--border)',
+  padding: '32px 0 28px',
+}
+
+const primaryLabel: React.CSSProperties = {
+  fontSize: '0.8125rem',
+  fontWeight: 600,
+  color: 'var(--text-1)',
+  borderLeft: '2px solid var(--accent)',
+  paddingLeft: 10,
+  marginBottom: 16,
+}
+
 export function SignalOfTheDay() {
   const { data, isLoading } = useCorrelationMatrix('pearson')
 
   if (isLoading || !data) {
     return (
-      <section style={{ borderBottom: '1px solid var(--border)', padding: '32px 0 28px' }}>
+      <section style={sectionBase}>
         <div style={{ maxWidth: '72ch' }}>
           <div className="animate-pulse" style={{ height: 12, width: 80, borderRadius: 4, background: 'var(--bg-3)', marginBottom: 16 }} />
           <div className="animate-pulse" style={{ height: 20, borderRadius: 4, background: 'var(--bg-3)', marginBottom: 8 }} />
@@ -48,9 +62,25 @@ export function SignalOfTheDay() {
   const top = pickTop(data.cells)
 
   if (!top) {
+    const lastRun = data.computed_at
+      ? `Last computed ${new Date(data.computed_at).toUTCString()}`
+      : null
+
     return (
-      <section style={{ borderBottom: '1px solid var(--border)', padding: '32px 0 28px', color: 'var(--text-3)', fontSize: '0.9375rem' }}>
-        Correlations updating — check back after 05:00 UTC.
+      <section style={sectionBase}>
+        <p style={primaryLabel}>Top Signal</p>
+        <p style={{ color: 'var(--text-3)', fontSize: '0.9375rem', marginBottom: lastRun ? 6 : 10 }}>
+          No significant signals yet.
+        </p>
+        {lastRun
+          ? <p style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{lastRun}</p>
+          : <button
+              onClick={() => document.getElementById('admin')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{ fontSize: '0.8125rem', color: 'var(--accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+            >
+              Run pipeline →
+            </button>
+        }
       </section>
     )
   }
@@ -63,10 +93,8 @@ export function SignalOfTheDay() {
     : null
 
   return (
-    <section style={{ borderBottom: '1px solid var(--border)', padding: '32px 0 28px' }}>
-      <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 14 }}>
-        Top Signal
-      </p>
+    <section style={sectionBase}>
+      <p style={primaryLabel}>Top Signal</p>
 
       <p style={{ fontSize: '1.1875rem', lineHeight: 1.6, color: 'var(--text-1)', maxWidth: '68ch', marginBottom: 16 }}>
         {buildNarrative(top)}

@@ -8,6 +8,15 @@ const STATUS_STYLE: Record<string, { label: string; color: string }> = {
   pending:  { label: 'Pending',   color: 'var(--text-3)' },
 }
 
+const primaryLabel: React.CSSProperties = {
+  fontSize: '0.8125rem',
+  fontWeight: 600,
+  color: 'var(--text-1)',
+  borderLeft: '2px solid var(--accent)',
+  paddingLeft: 10,
+  marginBottom: 20,
+}
+
 function AccuracyRing({ pct }: { pct: number }) {
   const r = 30
   const circ = 2 * Math.PI * r
@@ -67,9 +76,7 @@ export function TrackRecord() {
 
   return (
     <section>
-      <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 20 }}>
-        Track Record
-      </p>
+      <p style={primaryLabel}>Track Record</p>
 
       {isLoading && (
         <div className="animate-pulse" style={{ height: 96, borderRadius: 4, background: 'var(--bg-3)' }} />
@@ -103,9 +110,17 @@ export function TrackRecord() {
       )}
 
       {!isLoading && !tr?.total && (
-        <p style={{ color: 'var(--text-3)', fontSize: '0.875rem', marginBottom: 16 }}>
-          No predictions yet. They are generated daily at 06:00 UTC by the briefing pipeline.
-        </p>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.875rem', marginBottom: 8 }}>
+            No predictions yet.
+          </p>
+          <button
+            onClick={() => document.getElementById('admin')?.scrollIntoView({ behavior: 'smooth' })}
+            style={{ fontSize: '0.8125rem', color: 'var(--accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+          >
+            Run pipeline →
+          </button>
+        </div>
       )}
 
       {!isLoading && !!preds?.length && (

@@ -71,11 +71,13 @@ async def _fetch_etf_ohlcv(symbol: str, client: httpx.AsyncClient) -> list[dict]
         raise DataFetchError(f"HTTP error fetching {symbol}: {exc}") from exc
 
     if "Note" in data:
-        raise DataFetchError(f"Alpha Vantage rate limit atteint — réessayer dans 1 min")
+        raise DataFetchError(f"Alpha Vantage rate limit (minute): {data['Note']}")
+    if "Information" in data:
+        raise DataFetchError(f"Alpha Vantage quota/key: {data['Information']}")
     if "Error Message" in data:
         raise DataFetchError(f"Alpha Vantage: {data['Error Message']}")
     if "Time Series (Daily)" not in data:
-        raise DataFetchError(f"Pas de données reçues pour {symbol}")
+        raise DataFetchError(f"Pas de données reçues pour {symbol}: {list(data.keys())}")
 
     return [
         {"date": dt_str, "close": float(v["4. close"])}
@@ -140,12 +142,16 @@ async def _upsert(
 
 # ─────────────────────── Orchestration publique ───────────────────────────
 
-async def fetch_and_store_etfs(session: AsyncSession) -> dict[str, int]:
+async def fetch_and_store_etfs(session: AsyncSession) -> tuple[int, int]:
     """Télécharge les 9 ETFs SPDR et persiste dans data_streams.
 
     Respecte le rate limit AV free tier : 13 s entre chaque appel.
+
+    Returns:
+        (new_points, error_count) — distingue "0 car déjà à jour" de "0 car erreurs API".
     """
-    results: dict[str, int] = {}
+    new_total = 0
+    error_count = 0
     symbols = list(SPDR_ETFS.keys())
 
     async with httpx.AsyncClient() as client:
@@ -159,17 +165,17 @@ async def fetch_and_store_etfs(session: AsyncSession) -> dict[str, int]:
                     )
                     if await _upsert(session, dt, "etf_price", symbol, None, row["close"], "USD"):
                         count += 1
-                results[symbol] = count
+                new_total += count
                 logger.info(f"ETF {symbol}: {count} nouveaux points")
             except DataFetchError as exc:
                 logger.warning(f"ETF {symbol} skipped: {exc}")
-                results[symbol] = 0
+                error_count += 1
 
             if i < len(symbols) - 1:
                 await asyncio.sleep(_AV_CALL_DELAY)
 
     await session.commit()
-    return results
+    return new_total, error_count
 
 
 async def fetch_and_store_fred(session: AsyncSession) -> dict[str, int]:

@@ -21,6 +21,27 @@
 - [ ] **TODO: Pipeline failure alerting** — if Alpha Vantage key expires, cron job silently produces 0 articles. Add Render email alert on service failure or log-stream monitoring.
 - [ ] **TODO: HTTP cache headers on /correlations/matrix** — `Cache-Control: public, max-age=3600` + ETag on computed_at. Prevents Neon connection exhaustion under Reddit traffic spike.
 
+## UX Fixes — Frontend (audit 2026-05-07)
+
+### P0 — Bloqueurs hiérarchie / navigation
+
+- [x] **[UX-P0-1]** Déplacer `<PipelinePanel />` en bas de page (après TrackRecord) ou en drawer depuis une icône gear dans le header — admin ne doit pas s'afficher avant Signal of the Day
+- [x] **[UX-P0-2]** Ajouter nav sticky par ancres de section (Top Signal · Graph · Heatmap · Signals · Predictions) avec scroll-spy — sur mobile : pill nav horizontale sous le header
+
+### P1 — Friction mesurable
+
+- [x] **[UX-P1-3]** Réécrire App.tsx en Tailwind responsive — remplacer l'objet `S` + inline styles par classes (`grid grid-cols-1 md:grid-cols-2`, `max-w-4xl mx-auto px-5 md:px-10`, etc.)
+- [x] **[UX-P1-4]** LeadGraph : remplacer les 6 hex hardcodés par CSS vars via `getComputedStyle` + ajouter listener `matchMedia` pour re-render sur changement de thème
+- [x] **[UX-P1-5]** Différencier visuellement les section labels — Primary (Top Signal, Predictions) : `text-sm font-semibold text-[var(--text-1)]` + bordure accent gauche 2px · Secondary : style actuel conservé
+- [x] **[UX-P1-6]** Empty states actionnables : si master key connue → `"No data — [Run pipeline →]"` ouvre PipelinePanel · Sinon → `"Last run: [date]"` depuis l'API au lieu de l'heure UTC statique
+
+### P2 — Polish
+
+- [x] **[UX-P2-7]** LeadGraph : remplacer `<div>Loading…</div>` par `<div className="animate-pulse rounded-lg bg-[var(--bg-3)]" style={{height:260}} />` (cohérence avec tous les autres composants)
+- [x] **[UX-P2-8]** SignalFeed : ajouter bouton "Load more" (5 → 10 → 20) au lieu du cap fixe à 5
+- [x] **[UX-P2-9]** SignalCard "↓ Details" : ajouter `underline` ou `opacity-70` au repos pour rendre l'affordance cliquable visible sans hover
+- [x] **[UX-P2-10]** Supprimer le badge version `v0.1.0` du header ou le lier au CHANGELOG
+
 ## In Progress
 
 _(none)_

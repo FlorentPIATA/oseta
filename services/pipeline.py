@@ -26,6 +26,7 @@ class PipelineState:
     triggered_at: datetime | None = None
     finished_at: datetime | None = None
     etf_new: int | None = None
+    etf_errors: int | None = None
     fred_new: int | None = None
     computed: int | None = None
     skipped: int | None = None
@@ -48,6 +49,7 @@ def reset_for_run(triggered_at: datetime) -> None:
     _state.triggered_at = triggered_at
     _state.finished_at = None
     _state.etf_new = None
+    _state.etf_errors = None
     _state.fred_new = None
     _state.computed = None
     _state.skipped = None

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useCorrelationMatrix } from '../hooks/useCorrelationMatrix'
 import type { HeatmapCell } from '../types/correlation'
 
+const PAGE_SIZE = 5
+
 function strengthLabel(r: number): { label: string; color: string } {
   const abs = Math.abs(r)
   if (abs >= 0.7) return { label: 'Strong',    color: 'var(--pos)' }
@@ -68,7 +70,7 @@ function SignalCard({ cell, index }: { cell: HeatmapCell; index: number }) {
 
           <button
             onClick={() => setExpanded(e => !e)}
-            style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
           >
             {expanded ? '↑ Less' : '↓ Details'}
           </button>
@@ -80,11 +82,15 @@ function SignalCard({ cell, index }: { cell: HeatmapCell; index: number }) {
 
 export function SignalFeed() {
   const { data, isLoading } = useCorrelationMatrix('pearson')
+  const [limit, setLimit] = useState(PAGE_SIZE)
 
-  const signals = data?.cells
+  const allSignals = data?.cells
     .filter(c => c.is_significant && c.lag_days > 0)
     .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation))
-    .slice(0, 5) ?? []
+    ?? []
+
+  const signals  = allSignals.slice(0, limit)
+  const remaining = allSignals.length - limit
 
   return (
     <section>
@@ -100,7 +106,7 @@ export function SignalFeed() {
         </div>
       )}
 
-      {!isLoading && !signals.length && (
+      {!isLoading && !allSignals.length && (
         <p style={{ paddingTop: 16, color: 'var(--text-3)', fontSize: '0.875rem' }}>
           No significant signals yet — correlations update daily at 05:00 UTC.
         </p>
@@ -109,6 +115,15 @@ export function SignalFeed() {
       {signals.map((cell, i) => (
         <SignalCard key={`${cell.sector_a_code}-${cell.sector_b_code}`} cell={cell} index={i} />
       ))}
+
+      {!isLoading && remaining > 0 && (
+        <button
+          onClick={() => setLimit(l => l + PAGE_SIZE)}
+          style={{ marginTop: 12, fontSize: '0.8125rem', color: 'var(--accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+        >
+          Load more ({remaining} remaining)
+        </button>
+      )}
     </section>
   )
 }
