@@ -70,9 +70,10 @@ async def run_pipeline(
         _state.step = "fetching_etfs"
         logger.info("Pipeline: fetching ETFs")
         async with AsyncSessionLocal() as session:
-            etf_counts = await fetch_and_store_etfs(session)
-        _state.etf_new = sum(etf_counts.values())
-        logger.info(f"Pipeline: ETFs done ({_state.etf_new} new points)")
+            etf_new, etf_errors = await fetch_and_store_etfs(session)
+        _state.etf_new = etf_new
+        _state.etf_errors = etf_errors
+        logger.info(f"Pipeline: ETFs done ({_state.etf_new} new points, {_state.etf_errors} errors)")
 
         _state.step = "fetching_fred"
         logger.info("Pipeline: fetching FRED")
